@@ -32,18 +32,18 @@ window.LivewireUIModal = () => {
 
             if (this.getActiveComponentModalAttribute('dispatchCloseEvent') === true) {
                 const componentName = this.$wire.get('components')[this.activeComponent].name;
-                Livewire.dispatch('modalClosed', componentName);
+                Livewire.emit('modalClosed', componentName);
             }
 
             if (this.getActiveComponentModalAttribute('destroyOnClose') === true) {
-                Livewire.dispatch('destroyComponent', this.activeComponent);
+                Livewire.emit('destroyComponent', this.activeComponent);
             }
 
             if (skipPreviousModals > 0) {
                 for (var i = 0; i < skipPreviousModals; i++) {
                     if (destroySkipped) {
                         const id = this.componentHistory[this.componentHistory.length - 1];
-                        Livewire.dispatch('destroyComponent', {id: id});
+                        Livewire.emit('destroyComponent', id);
                     }
                     this.componentHistory.pop();
                 }
@@ -51,7 +51,7 @@ window.LivewireUIModal = () => {
 
             const id = this.componentHistory.pop();
 
-            if (id && !force) {
+            if (id && force === false) {
                 if (id) {
                     this.setActiveModalComponent(id, true);
                 } else {
@@ -89,39 +89,6 @@ window.LivewireUIModal = () => {
                     this.modalWidth = this.getActiveComponentModalAttribute('maxWidthClass');
                 }, 300);
             }
-
-            this.$nextTick(() => {
-                let focusable = this.$refs[id]?.querySelector('[autofocus]');
-                if (focusable) {
-                    setTimeout(() => {
-                        focusable.focus();
-                    }, focusableTimeout);
-                }
-            });
-        },
-        focusables() {
-            let selector = 'a, button, input:not([type=\'hidden\'], textarea, select, details, [tabindex]:not([tabindex=\'-1\'])'
-
-            return [...this.$el.querySelectorAll(selector)]
-                .filter(el => !el.hasAttribute('disabled'))
-        },
-        firstFocusable() {
-            return this.focusables()[0]
-        },
-        lastFocusable() {
-            return this.focusables().slice(-1)[0]
-        },
-        nextFocusable() {
-            return this.focusables()[this.nextFocusableIndex()] || this.firstFocusable()
-        },
-        prevFocusable() {
-            return this.focusables()[this.prevFocusableIndex()] || this.lastFocusable()
-        },
-        nextFocusableIndex() {
-            return (this.focusables().indexOf(document.activeElement) + 1) % (this.focusables().length + 1)
-        },
-        prevFocusableIndex() {
-            return Math.max(0, this.focusables().indexOf(document.activeElement)) - 1
         },
         setShowPropertyTo(show) {
             this.show = show;
@@ -140,11 +107,11 @@ window.LivewireUIModal = () => {
         init() {
             this.modalWidth = this.getActiveComponentModalAttribute('maxWidthClass');
 
-            Livewire.on('closeModal', (data) => {
-                this.closeModal(data?.force ?? false, data?.skipPreviousModals ?? 0, data?.destroySkipped ?? false);
+            Livewire.on('closeModal', (force = false, skipPreviousModals = 0, destroySkipped = false) => {
+                this.closeModal(force, skipPreviousModals, destroySkipped);
             });
 
-            Livewire.on('activeModalComponentChanged', ({id}) => {
+            Livewire.on('activeModalComponentChanged', (id) => {
                 this.setActiveModalComponent(id);
             });
         }

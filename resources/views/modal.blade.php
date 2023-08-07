@@ -8,6 +8,7 @@
 
     <div
             x-data="LivewireUIModal()"
+            x-init="init()"
             x-on:close.stop="setShowPropertyTo(false)"
             x-on:keydown.escape.window="closeModalOnEscape()"
             x-show="show"
@@ -47,7 +48,7 @@
             >
                 @forelse($components as $id => $component)
                     <div x-show.immediate="activeComponent == '{{ $id }}'" x-ref="{{ $id }}" wire:key="{{ $id }}">
-                        @livewire($component['name'], $component['arguments'], key($id))
+                        @livewire($component['name'], $component['attributes'], key($id))
                     </div>
                 @empty
                 @endforelse

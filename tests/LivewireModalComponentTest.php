@@ -3,7 +3,6 @@
 namespace LivewireUI\Modal\Tests;
 
 use Livewire\Livewire;
-use Livewire\Mechanisms\ComponentRegistry;
 use LivewireUI\Modal\Tests\Components\DemoModal;
 
 class LivewireModalComponentTest extends TestCase
@@ -12,7 +11,7 @@ class LivewireModalComponentTest extends TestCase
     {
         Livewire::test(DemoModal::class)
             ->call('closeModal')
-            ->assertDispatched('closeModal', force: false, skipPreviousModals: 0, destroySkipped: false);
+            ->assertEmitted('closeModal', false, 0, false);
     }
 
     public function testForceCloseModal(): void
@@ -20,7 +19,7 @@ class LivewireModalComponentTest extends TestCase
         Livewire::test(DemoModal::class)
             ->call('forceClose')
             ->call('closeModal')
-            ->assertDispatched('closeModal', force: true, skipPreviousModals: 0, destroySkipped: false);
+            ->assertEmitted('closeModal', true, 0, false);
     }
 
     public function testModalSkipping(): void
@@ -28,18 +27,18 @@ class LivewireModalComponentTest extends TestCase
         Livewire::test(DemoModal::class)
             ->call('skipPreviousModals', 5)
             ->call('closeModal')
-            ->assertDispatched('closeModal', force: false, skipPreviousModals: 5, destroySkipped: false);
+            ->assertEmitted('closeModal', false, 5, false);
 
         Livewire::test(DemoModal::class)
             ->call('skipPreviousModal')
             ->call('closeModal')
-            ->assertDispatched('closeModal', force: false, skipPreviousModals: 1, destroySkipped: false);
+            ->assertEmitted('closeModal', false, 1, false);
 
         Livewire::test(DemoModal::class)
             ->call('skipPreviousModal')
             ->call('destroySkippedModals')
             ->call('closeModal')
-            ->assertDispatched('closeModal', force: false, skipPreviousModals: 1, destroySkipped: true);
+            ->assertEmitted('closeModal', false, 1, true);
     }
 
     public function testModalEventEmitting(): void
@@ -48,26 +47,24 @@ class LivewireModalComponentTest extends TestCase
             ->call('closeModalWithEvents', [
                 'someEvent',
             ])
-            ->assertDispatched('someEvent');
-
-        $name = app(ComponentRegistry::class)->getName(DemoModal::class);
+            ->assertEmitted('someEvent');
 
         Livewire::test(DemoModal::class)
             ->call('closeModalWithEvents', [
-                $name => 'someEvent',
+                DemoModal::getName() => 'someEvent',
             ])
-            ->assertDispatched('someEvent');
+            ->assertEmitted('someEvent');
 
         Livewire::test(DemoModal::class)
             ->call('closeModalWithEvents', [
                 ['someEventWithParams', ['param1', 'param2']],
             ])
-            ->assertDispatched('someEventWithParams', 'param1', 'param2');
+            ->assertEmitted('someEventWithParams', 'param1', 'param2');
 
         Livewire::test(DemoModal::class)
             ->call('closeModalWithEvents', [
-                $name => ['someEventWithParams', ['param1', 'param2']],
+                DemoModal::getName() => ['someEventWithParams', ['param1', 'param2']],
             ])
-            ->assertDispatched('someEventWithParams', 'param1', 'param2');
+            ->assertEmitted('someEventWithParams', 'param1', 'param2');
     }
 }

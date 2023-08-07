@@ -9,7 +9,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Reflector;
 use Illuminate\View\View;
 use Livewire\Component;
-use Livewire\Mechanisms\ComponentRegistry;
 use ReflectionClass;
 
 class Modal extends Component
@@ -24,27 +23,25 @@ class Modal extends Component
         $this->activeComponent = null;
     }
 
-    public function openModal($component, $arguments = [], $modalAttributes = []): void
+    public function openModal($component, $componentAttributes = [], $modalAttributes = []): void
     {
         $requiredInterface = \LivewireUI\Modal\Contracts\ModalComponent::class;
-        $componentClass = app(ComponentRegistry::class)->getClass($component);
+        $componentClass = app('livewire')->getClass($component);
         $reflect = new ReflectionClass($componentClass);
 
         if ($reflect->implementsInterface($requiredInterface) === false) {
             throw new Exception("[{$componentClass}] does not implement [{$requiredInterface}] interface.");
         }
 
-        $id = md5($component.serialize($arguments));
+        $id = md5($component.serialize($componentAttributes));
 
-        $arguments = collect($arguments)
-            ->merge($this->resolveComponentProps($arguments, new $componentClass()))
+        $componentAttributes = collect($componentAttributes)
+            ->merge($this->resolveComponentProps($componentAttributes, new $componentClass()))
             ->all();
-
 
         $this->components[$id] = [
             'name' => $component,
-            'attributes' => $arguments, // Deprecated
-            'arguments' => $arguments,
+            'attributes' => $componentAttributes,
             'modalAttributes' => array_merge([
                 'closeOnClickAway' => $componentClass::closeModalOnClickAway(),
                 'closeOnEscape' => $componentClass::closeModalOnEscape(),
@@ -58,7 +55,7 @@ class Modal extends Component
 
         $this->activeComponent = $id;
 
-        $this->dispatch('activeModalComponentChanged', id: $id);
+        $this->emit('activeModalComponentChanged', $id);
     }
 
     public function resolveComponentProps(array $attributes, Component $component)
@@ -99,7 +96,7 @@ class Modal extends Component
             return new Collection();
         }
 
-        return collect($component->all())
+        return collect($component->getPublicPropertiesDefinedBySubClass())
             ->map(function ($value, $name) use ($component) {
                 return Reflector::getParameterClassName(new \ReflectionProperty($component, $name));
             })
@@ -121,15 +118,15 @@ class Modal extends Component
 
     public function render(): View
     {
-        if (config('wire-elements-modal.include_js', true)) {
+        if (config('livewire-ui-modal.include_js', true)) {
             $jsPath = __DIR__.'/../public/modal.js';
         }
 
-        if (config('wire-elements-modal.include_css', false)) {
+        if (config('livewire-ui-modal.include_css', false)) {
             $cssPath = __DIR__.'/../public/modal.css';
         }
 
-        return view('wire-elements-modal::modal', [
+        return view('livewire-ui-modal::modal', [
             'jsPath' => $jsPath ?? null,
             'cssPath' => $cssPath ?? null,
         ]);
